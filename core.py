@@ -196,7 +196,7 @@ gen_size = 300
 rate_mutation = .4
 rate_crossover= .2
 rate_new = .3
-no_generations = 2000
+no_generations = 10000
 
 pop = [new_perm() for i in xrange(0, gen_size)]
 
@@ -205,20 +205,22 @@ compare_perm.pt = pref_table
 bests = []
 
 start_time = get_time()
+last_change_val = 0
+last_change_gen = 0
 
 for i in xrange(0, no_generations-1):
 	newpop = []
-	for pick in xrange(0, int(rate_mutation*len(pop))):
+	for pick in xrange(0, int(rate_mutation*gen_size)):
 		pos = random.randint(0,len(pop)-1)
 		newpop.append(mutate_perm(pop[pos]))
-	for pick in xrange(0, int(rate_crossover*len(pop))):
+	for pick in xrange(0, int(rate_crossover*gen_size)):
 		pos1 = random.randint(0,len(pop)-1)
 		pos2 = random.randint(0,len(pop)-1)
 		newpop.append(crossover(pop[pos1],pop[pos2]))
-	for pick in xrange(0, int(rate_new*len(pop))):
+	for pick in xrange(0, int(rate_new*gen_size)):
 		newpop.append(new_perm())
 	pop = sorted(pop, cmp=compare_perm)
-	for j in xrange(0, int(len(pop)*(1-(rate_new+rate_crossover+rate_mutation)))):
+	for j in xrange(0, int(gen_size-(len(newpop)))):
 		newpop.append(pop[j][:])
 	pop = sorted(newpop, cmp=compare_perm )
 	curtime = get_time() - start_time
@@ -226,11 +228,14 @@ for i in xrange(0, no_generations-1):
 		print "Generation %d ..." % (i)
 		print "Best Ranking: "
 		print_perm(pop[0])
-		print "Best score in population size %d - %d, worst - %d" % (len(pop), fitness(pop[0], pref_table), fitness(newpop[len(pop)-1], pref_table))
+		print "Best score in population size %d - %d, worst - %d, generations since last improvement: %d" % (len(pop), fitness(pop[0], pref_table), fitness(newpop[len(pop)-1], pref_table), i-last_change_gen)
 		print "Time elapsed: %s, Seconds per generation: %f, Estimated Time remaining: %s" % (timestr(curtime), curtime/i, timestr((float(curtime)/i)*(no_generations-i)))
 
 	bests.append(pop[0])
+	if(fitness(bests[len(bests)-1], pref_table) > last_change_val):
+		last_change_val = fitness(bests[len(bests)-1], pref_table)
+		last_change_gen = i
 
 print "Best score so far - "
 
-print best[len(bests)-1]
+print bests[len(bests)-1]
